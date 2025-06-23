@@ -1,0 +1,13 @@
+{
+  "name": "shiro-game-bot",
+  "version": "1.0.0",
+  "description": "Telegram Games official bot for Shiro Coin Game",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "node-telegram-bot-api": "^0.61.0"
+  }
+}
