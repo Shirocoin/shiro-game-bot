@@ -1,7 +1,7 @@
 {
   "name": "shiro-game-bot",
   "version": "1.0.0",
-  "description": "Telegram Games official bot for Shiro Coin Game",
+  "description": "Telegram Games official bot for Shiro Coin Bot",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
