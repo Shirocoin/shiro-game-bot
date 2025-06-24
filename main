@@ -36,12 +36,14 @@ let shiroHitbox;
 let coinDropEvent;
 let dropSpeed = 450;
 let gameTime = 0;
+
+// 🕓 TEMPORIZADOR con estrellas
 let timeBar;
 let timeStars = [];
 let timeMax = 90;
 let currentTime = 0;
 let gameOver = false;
-let gameStarted = false;
+let gameStarted = false; // ✅ AÑADIDO - CRUCIAL PARA BOTÓN START
 let soundEffects = {};
 let startButton;
 let restartButton;
@@ -72,11 +74,13 @@ function preload() {
 }
 
 function create() {
+  // ✅ INICIALIZAR ESTADOS CORRECTAMENTE
   gameOver = false;
-  gameStarted = false;
+  gameStarted = false; // ✅ AÑADIDO - Crucial para botón START
   currentTime = 0;
   score = 0;
   
+  // Detener cualquier evento de caída de monedas previo
   if (coinDropEvent) {
       coinDropEvent.remove();
   }
@@ -105,6 +109,7 @@ function create() {
   shiro.setVelocity(0);
   shiro.setGravityY(0);
 
+  // ✅ AÑADIR VERIFICACIÓN DE SEGURIDAD
   this.time.delayedCall(0, () => {
     if (shiro && shiro.body) {
       shiro.body.setSize(60, 60, true);
@@ -136,8 +141,9 @@ function create() {
     strokeThickness: 2
   });
   
-  // Crear barra de estrellas
+  // 🟡 Crear barra de estrellas
   timeBar = this.add.group();
+  // ✅ MEJORAR LIMPIEZA DE ESTRELLAS
   timeStars.forEach(star => {
     if (star && star.destroy) star.destroy();
   });
@@ -157,40 +163,40 @@ function create() {
     gameOver: this.sound.add('game_over')
   };
 
-  // ✅ BOTÓN START - CREAR PRIMERO
+  // ✅ BOTÓN START - CREAR ANTES DE CONTROLES TÁCTILES
   startButton = this.add.image(240, 360, 'start_icon')
     .setDisplaySize(120, 120)
     .setInteractive()
     .setDepth(100);
 
-  // ✅ PAUSAR JUEGO DESDE EL INICIO
+  // ✅ PAUSAR TODO AL INICIO - SIN MÚSICA
   this.physics.pause();
   coinDropEvent.paused = true;
+  // ✅ NO iniciar música aquí
 
-  // ✅ EVENTO DEL BOTÓN START - SIN CONFLICTOS
+  // ✅ EVENTO DEL BOTÓN START CORREGIDO
   startButton.on('pointerdown', () => {
     console.log('¡Botón START presionado!');
     startButton.setVisible(false);
-    gameStarted = true;
+    gameStarted = true; // ✅ MARCAR COMO INICIADO
     this.physics.resume();
     coinDropEvent.paused = false;
+    // ✅ INICIAR MÚSICA AQUÍ
     this.sound.play('music', { loop: true, volume: 0.1 });
   });
 
-  // ✅ CONTROLES TÁCTILES - CORREGIDOS
+  // ✅ CONTROLES TÁCTILES - DESPUÉS DEL BOTÓN
   setupTouchControls(this);
 
-  // ✅ Botones táctiles para móviles
+  // 📱 Botones táctiles para móviles con iconos
   if (this.sys.game.device.input.touch) {
     const leftButton = this.add.image(60, 660, 'arrow_left')
       .setDisplaySize(80, 80)
-      .setInteractive()
-      .setDepth(50);
+      .setInteractive();
 
     const rightButton = this.add.image(420, 660, 'arrow_right')
       .setDisplaySize(80, 80)
-      .setInteractive()
-      .setDepth(50);
+      .setInteractive();
 
     leftButton.on('pointerdown', () => { moveLeft = true; });
     rightButton.on('pointerdown', () => { moveRight = true; });
@@ -202,7 +208,7 @@ function create() {
 }
 
 function update() {
-  if (gameOver || !gameStarted) return;
+  if (gameOver || !gameStarted) return; // ✅ AÑADIR CONDICIÓN gameStarted
   
   // Control de movimiento horizontal
   if (cursors.left.isDown || moveLeft) {
@@ -213,7 +219,7 @@ function update() {
     shiro.setVelocityX(0);
   }
 
-  // Límite visual duro a izquierda y derecha
+  // 🧱 Límite visual duro a izquierda y derecha
   if (shiro.x > 435) {
     shiro.setVelocityX(0);
     shiro.x = 435;
@@ -223,7 +229,7 @@ function update() {
     shiro.x = 45;
   }
 
-  // Actualizar posición del hitbox invisible
+  // 🎯 Actualizar posición del hitbox invisible - ✅ CON VERIFICACIÓN
   if (shiroHitbox && shiro) {
     shiroHitbox.x = shiro.x;
     shiroHitbox.y = shiro.y - 50;
@@ -243,6 +249,7 @@ function update() {
         newDelay = Math.max(newDelay - 10, 800);
       }
 
+      // ✅ VERIFICAR QUE EXISTE ANTES DE RESETEAR
       if (coinDropEvent) {
         coinDropEvent.reset({
           delay: newDelay,
@@ -254,7 +261,7 @@ function update() {
     }
   }
 
-  // TEMPORIZADOR de estrellas
+  // 🕓 TEMPORIZADOR de estrellas
   if (!gameOver) {
     currentTime += this.game.loop.delta / 1000;
     const secondsPerStar = timeMax / timeStars.length;
@@ -269,28 +276,6 @@ function update() {
       endGame.call(this);
     }
   }
-}
-
-// ✅ SETUPTOUCH CORREGIDO - SIN ERROR CONTAINS
-function setupTouchControls(scene) {
-  scene.input.on('pointerdown', (pointer) => {
-    if (gameStarted && !gameOver) {
-        if (pointer.x < scene.sys.game.config.width / 2) {
-            moveLeft = true;
-            moveRight = false;
-        } else {
-            moveRight = true;
-            moveLeft = false;
-        }
-    }
-  });
-
-  scene.input.on('pointerup', () => {
-    moveLeft = false;
-    moveRight = false;
-  });
-
-  // ✅ REMOVIDO el pointerout problemático con contains()
 }
 
 function dropCoin() {
@@ -345,7 +330,7 @@ function dropCoin() {
   
   for (let i = 0; i < distributedPositions.length; i++) {
     this.time.delayedCall(i * 500, () => {
-      if (gameOver) return;
+      if (gameOver) return; // ✅ VERIFICACIÓN ADICIONAL
       
       const x = distributedPositions[i];
       const typeRng = Math.random();
@@ -364,6 +349,7 @@ function dropCoin() {
     }, null, this);
   }
   
+  // SEGUNDA OLEADA
   if (currentTime > 10 && Math.random() < 0.35) {
     const positions = Phaser.Utils.Array.Shuffle([60, 120, 180, 240, 300, 360, 420]).slice(0, 2);
     positions.forEach((position, i) => {
@@ -381,6 +367,7 @@ function dropCoin() {
     });
   }
   
+  // TERCERA OLEADA
   if (currentTime > 30 && Math.random() < 0.15) {
     const positions = Phaser.Utils.Array.Shuffle([80, 160, 240, 320, 400]).slice(0, 2);
     positions.forEach((position, i) => {
@@ -444,13 +431,37 @@ function collectCoin(shiro, coin) {
   coin.destroy();
 }
 
-// ✅ FUNCIÓN ENDGAME PERFECCIONADA
+// ✅ FUNCIÓN SETUPTOUCH CORREGIDA - SIN ERROR CONTAINS()
+function setupTouchControls(scene) {
+  scene.input.on('pointerdown', (pointer) => {
+    // ✅ SOLO ACTIVAR SI EL JUEGO HA EMPEZADO
+    if (gameStarted && !gameOver) {
+        if (pointer.x < scene.sys.game.config.width / 2) {
+            moveLeft = true;
+            moveRight = false;
+        } else {
+            moveRight = true;
+            moveLeft = false;
+        }
+    }
+  });
+
+  scene.input.on('pointerup', () => {
+    moveLeft = false;
+    moveRight = false;
+  });
+
+  // ✅ REMOVIDO EL POINTEROUT PROBLEMÁTICO CON CONTAINS()
+}
+
+// ✅ FUNCIÓN ENDGAME CORREGIDA PARA FLY.IO + TELEGRAM GAMES
 function endGame() {
   if (gameOver) return; 
   gameOver = true;
 
   console.log('🎯 FINALIZANDO JUEGO CON SCORE:', score);
 
+  // ✅ CLEANUP MEJORADO
   if (coinDropEvent) {
     coinDropEvent.remove(false);
     coinDropEvent = null;
@@ -497,10 +508,11 @@ function endGame() {
       this.scene.restart();
     });
 
-    // 🎮 ENVIAR SCORE OFICIAL DE TELEGRAM GAMES
-    console.log('🎯 ENVIANDO SCORE OFICIAL A TELEGRAM GAMES:', score);
+    // 🎮 ENVÍO DUAL: TELEGRAM GAMES OFICIAL + BACKUP
+    console.log('🎯 ENVIANDO SCORE:', score);
     
     try {
+      // ✅ INTENTAR TELEGRAM GAMES OFICIAL PRIMERO
       if (typeof sendOfficialScore === 'function') {
         sendOfficialScore(score);
         
@@ -512,23 +524,14 @@ function endGame() {
           strokeThickness: 2
         }).setDepth(100);
         
-        this.add.text(80, 480, '📤 Usa el botón Compartir para publicar', {
-          fontSize: '12px',
-          fill: '#ffff00',
-          fontFamily: 'Arial',
-          stroke: '#000',
-          strokeThickness: 1
-        }).setDepth(100);
-        
       } else {
-        console.log('⚠️ sendOfficialScore no disponible - usando backup');
-        throw new Error('Función oficial no disponible');
+        throw new Error('Sistema oficial no disponible');
       }
       
     } catch (error) {
-      console.error('❌ Error con score oficial, usando backup:', error);
+      console.log('⚠️ Usando sistema backup');
       
-      // 🔄 FALLBACK AL SISTEMA BACKUP
+      // ✅ SISTEMA BACKUP CON FLY.IO - URL CORREGIDA
       fetch('https://shiro-game-bot.fly.dev/api/score', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -547,15 +550,15 @@ function endGame() {
         console.log('✅ SCORE BACKUP ENVIADO:', data);
         
         if (data.updated) {
-          this.add.text(120, 450, '🎉 ¡Nuevo récord backup!', {
-            fontSize: '16px',
+          this.add.text(120, 450, '🎉 ¡Nuevo récord!', {
+            fontSize: '18px',
             fill: '#00ff00',
             fontFamily: 'Arial',
             stroke: '#000',
             strokeThickness: 2
           }).setDepth(100);
         } else {
-          this.add.text(100, 450, 'Score backup registrado', {
+          this.add.text(100, 450, 'Puntuación registrada', {
             fontSize: '16px',
             fill: '#ffff00',
             fontFamily: 'Arial',
@@ -565,7 +568,7 @@ function endGame() {
         }
         
         this.add.text(130, 480, 'Usa /ranking para ver', {
-          fontSize: '12px',
+          fontSize: '14px',
           fill: '#ffffff',
           fontFamily: 'Arial',
           stroke: '#000',
@@ -573,7 +576,7 @@ function endGame() {
         }).setDepth(100);
       })
       .catch(error => {
-        console.error('❌ Error enviando score backup:', error);
+        console.error('❌ Error enviando score:', error);
         
         this.add.text(100, 450, '❌ Error enviando score', {
           fontSize: '16px',
