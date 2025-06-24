@@ -1,3 +1,6 @@
+
+const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
+
 const TelegramBot = require('node-telegram-bot-api');
 const express = require("express");
 const app = express();
@@ -49,6 +52,36 @@ app.get("/", (req, res) => {
   console.log("Redirigiendo al juego...");
   res.redirect(GAME_URL);
 });
+
+
+app.post("/setscore", async (req, res) => {
+  const { userId, score, inline_message_id } = req.body;
+
+  if (!userId || !score || !BOT_TOKEN) {
+    return res.status(400).json({ error: "Faltan datos" });
+  }
+
+  try {
+    const telegramURL = `https://api.telegram.org/bot${BOT_TOKEN}/setGameScore`;
+    const result = await fetch(telegramURL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        user_id: userId,
+        score: parseInt(score),
+        inline_message_id,
+        force: true
+      })
+    });
+
+    const data = await result.json();
+    res.json(data);
+  } catch (error) {
+    console.error("Error al enviar score:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 
 app.listen(PORT, () => {
   console.log(`✅ Servidor escuchando en puerto ${PORT}`);
