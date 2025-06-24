@@ -93,29 +93,15 @@ app.listen(PORT, () => {
 bot.onText(/\/start/, async (msg) => {
   const chatId = msg.chat.id;
   const userId = msg.from.id;
-  const username = msg.from.username || msg.from.first_name || 'Usuario';
-  
-  console.log(`Comando /start del chat: ${chatId}, usuario: ${userId}`);
+  const username = msg.from.username || msg.from.first_name || 'Jugador';
 
-  const message = `🐱 ¡Hola ${username}! Bienvenido a Shiro Coin Game! 🪙
-
-🎮 **Para jugar:** ${GAME_URL}
-
-🏆 **Comandos disponibles:**
-/ranking - Ver ranking actual
-/testscore [número] - Registrar puntuación
-/help - Ayuda
-
-**Ejemplo:** /testscore 150
-
-¡Consigue la puntuación más alta y usa /ranking para verificar!`;
+  console.log(`🟢 /start - Enviando juego a ${username} (${userId})`);
 
   try {
-    await bot.sendMessage(chatId, message);
-    console.log(`✅ Mensaje de inicio enviado. Usuario: ${userId}`);
-    
+    await bot.sendGame(chatId, 'shirogame');
   } catch (error) {
-    console.error("❌ Error enviando mensaje:", error.message);
+    console.error("❌ Error enviando juego:", error.message);
+    await bot.sendMessage(chatId, ⚠️ No se pudo cargar el juego. Intenta con este enlace:\nhttps://t.me/ShiroCoin_GameBot?game=shirogame');
   }
 });
 
