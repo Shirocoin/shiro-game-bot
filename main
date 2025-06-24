@@ -541,10 +541,10 @@ function endGame() {
   soundEffects.gameOver.play();
 
   this.physics.pause();
-  
+
   this.time.delayedCall(2000, () => {
     if (shiro) shiro.setVisible(false);
-    
+
     this.add.text(120, 300, 'GAME OVER', {
       fontSize: '48px',
       fill: '#ff0000',
@@ -574,78 +574,37 @@ function endGame() {
       this.scene.restart();
     });
 
-    // 🚀 ENVÍO DIRECTO AL RANKING INTERNO - URL CORREGIDA
-    console.log('🎯 ENVIANDO SCORE AL RANKING INTERNO:', score);
-    
+    // 🚀 ENVÍO DIRECTO AL RANKING DE TELEGRAM
+    console.log('🎯 ENVIANDO SCORE A TELEGRAM:', score);
+
     try {
-      // ✅ CORRECCIÓN AQUÍ: Coma dentro del paréntesis, no fuera
-      fetch('https://shiro-game-bot.fly.dev', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: 'player_' + Date.now(),
-          username: 'Jugador_' + Math.floor(Math.random() * 1000),
-          score: score,
-          timestamp: Date.now()
-        })
-      })
-      .then(response => {
-        console.log('📡 Response status:', response.status);
-        return response.json();
-      })
-      .then(data => {
-        console.log('✅ SCORE ENVIADO AL RANKING:', data);
-        
-        // Mostrar mensaje en el juego
-        if (data.updated) {
-          this.add.text(120, 450, '🎉 ¡Nuevo récord!', {
-            fontSize: '18px',
-            fill: '#00ff00',
-            fontFamily: 'Arial',
-            stroke: '#000',
-            strokeThickness: 2
-          }).setDepth(100);
-        } else {
-          this.add.text(100, 450, 'Puntuación registrada', {
-            fontSize: '16px',
-            fill: '#ffff00',
-            fontFamily: 'Arial',
-            stroke: '#000',
-            strokeThickness: 2
-          }).setDepth(100);
-        }
-        
-        this.add.text(130, 480, 'Usa /ranking para ver', {
-          fontSize: '14px',
-          fill: '#ffffff',
-          fontFamily: 'Arial',
-          stroke: '#000',
-          strokeThickness: 1
-        }).setDepth(100);
-      })
-      .catch(error => {
-        console.error('❌ Error enviando score:', error);
-        
-        this.add.text(100, 450, '❌ Error enviando score', {
-          fontSize: '16px',
-          fill: '#ff0000',
-          fontFamily: 'Arial',
-          stroke: '#000',
-          strokeThickness: 2
-        }).setDepth(100);
-        
-        this.add.text(80, 480, 'Usa /testscore ' + score + ' manualmente', {
-          fontSize: '12px',
-          fill: '#ffff00',
-          fontFamily: 'Arial',
-          stroke: '#000',
-          strokeThickness: 1
-        }).setDepth(100);
-      });
-      
+      if (window.TelegramGameProxy && TelegramGameProxy.sendScore) {
+        TelegramGameProxy.sendScore(score);
+      } else if (Telegram.WebApp && Telegram.WebApp.sendData) {
+        Telegram.WebApp.sendData(JSON.stringify({ score }));
+      } else {
+        console.warn('⚠️ No se pudo enviar el score a Telegram');
+      }
+
+      this.add.text(120, 450, '✅ Puntuación enviada', {
+        fontSize: '16px',
+        fill: '#00ff00',
+        fontFamily: 'Arial',
+        stroke: '#000',
+        strokeThickness: 2
+      }).setDepth(100);
+
+      this.add.text(130, 480, 'Revisa el ranking en Telegram', {
+        fontSize: '14px',
+        fill: '#ffffff',
+        fontFamily: 'Arial',
+        stroke: '#000',
+        strokeThickness: 1
+      }).setDepth(100);
+
     } catch (error) {
       console.error('❌ Error total:', error);
-      
+
       this.add.text(100, 450, '❌ Error de conexión', {
         fontSize: '16px',
         fill: '#ff0000',
@@ -654,6 +613,6 @@ function endGame() {
         strokeThickness: 2
       }).setDepth(100);
     }
-    
+
   }, null, this);
 }
