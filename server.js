@@ -101,7 +101,8 @@ bot.onText(/\/start/, async (msg) => {
     await bot.sendGame(chatId, 'shirogame');
   } catch (error) {
     console.error("❌ Error enviando juego:", error.message);
-    await bot.sendMessage(chatId, ⚠️ No se pudo cargar el juego. Intenta con este enlace:\nhttps://t.me/ShiroCoin_GameBot?game=shirogame');
+    await bot.sendMessage(chatId, '⚠️ No se pudo cargar el juego. Intenta con este enlace:\nhttps://t.me/ShiroCoin_GameBot?game=shirogame');
+
   }
 });
 
