@@ -36,14 +36,12 @@ let shiroHitbox;
 let coinDropEvent;
 let dropSpeed = 450;
 let gameTime = 0;
-
-// 🕓 TEMPORIZADOR con estrellas
 let timeBar;
 let timeStars = [];
 let timeMax = 90;
 let currentTime = 0;
 let gameOver = false;
-let gameStarted = false; // ✅ AÑADIDO - CRUCIAL PARA BOTÓN START
+let gameStarted = false;
 let soundEffects = {};
 let startButton;
 let restartButton;
@@ -74,13 +72,11 @@ function preload() {
 }
 
 function create() {
-  // ✅ INICIALIZAR ESTADOS CORRECTAMENTE
   gameOver = false;
-  gameStarted = false; // ✅ AÑADIDO - Crucial para botón START
+  gameStarted = false;
   currentTime = 0;
   score = 0;
   
-  // Detener cualquier evento de caída de monedas previo
   if (coinDropEvent) {
       coinDropEvent.remove();
   }
@@ -109,7 +105,6 @@ function create() {
   shiro.setVelocity(0);
   shiro.setGravityY(0);
 
-  // ✅ AÑADIR VERIFICACIÓN DE SEGURIDAD
   this.time.delayedCall(0, () => {
     if (shiro && shiro.body) {
       shiro.body.setSize(60, 60, true);
@@ -124,14 +119,6 @@ function create() {
   // Configurar controles
   cursors = this.input.keyboard.createCursorKeys();
 
-  // Configurar evento para caída de monedas
-  coinDropEvent = this.time.addEvent({
-    delay: 1300,
-    callback: dropCoin,
-    callbackScope: this,
-    loop: true
-  });
-
   // Mostrar puntuación
   scoreText = this.add.text(20, 60, 'Puntos: 0', {
     fontSize: '24px',
@@ -141,9 +128,8 @@ function create() {
     strokeThickness: 2
   });
   
-  // 🟡 Crear barra de estrellas
+  // Crear barra de estrellas
   timeBar = this.add.group();
-  // ✅ MEJORAR LIMPIEZA DE ESTRELLAS
   timeStars.forEach(star => {
     if (star && star.destroy) star.destroy();
   });
@@ -163,32 +149,37 @@ function create() {
     gameOver: this.sound.add('game_over')
   };
 
-  // ✅ BOTÓN START - CREAR ANTES DE CONTROLES TÁCTILES
+  // Botón START
   startButton = this.add.image(240, 360, 'start_icon')
     .setDisplaySize(120, 120)
     .setInteractive()
     .setDepth(100);
 
-  // ✅ PAUSAR TODO AL INICIO - SIN MÚSICA
+  // Pausar juego desde el inicio
   this.physics.pause();
-  coinDropEvent.paused = true;
-  // ✅ NO iniciar música aquí
 
-  // ✅ EVENTO DEL BOTÓN START CORREGIDO
+  // Evento del botón START
   startButton.on('pointerdown', () => {
     console.log('¡Botón START presionado!');
     startButton.setVisible(false);
-    gameStarted = true; // ✅ MARCAR COMO INICIADO
+    gameStarted = true;
     this.physics.resume();
-    coinDropEvent.paused = false;
-    // ✅ INICIAR MÚSICA AQUÍ
+    
+    // CREAR coinDropEvent SOLO AQUÍ
+    coinDropEvent = this.time.addEvent({
+      delay: 1300,
+      callback: dropCoin,
+      callbackScope: this,
+      loop: true
+    });
+    
     this.sound.play('music', { loop: true, volume: 0.1 });
   });
 
-  // ✅ CONTROLES TÁCTILES - DESPUÉS DEL BOTÓN
+  // Controles táctiles
   setupTouchControls(this);
 
-  // 📱 Botones táctiles para móviles con iconos
+  // Botones táctiles para móviles
   if (this.sys.game.device.input.touch) {
     const leftButton = this.add.image(60, 660, 'arrow_left')
       .setDisplaySize(80, 80)
@@ -208,7 +199,7 @@ function create() {
 }
 
 function update() {
-  if (gameOver || !gameStarted) return; // ✅ AÑADIR CONDICIÓN gameStarted
+  if (gameOver || !gameStarted) return;
   
   // Control de movimiento horizontal
   if (cursors.left.isDown || moveLeft) {
@@ -219,7 +210,7 @@ function update() {
     shiro.setVelocityX(0);
   }
 
-  // 🧱 Límite visual duro a izquierda y derecha
+  // Límite visual duro a izquierda y derecha
   if (shiro.x > 435) {
     shiro.setVelocityX(0);
     shiro.x = 435;
@@ -229,7 +220,7 @@ function update() {
     shiro.x = 45;
   }
 
-  // 🎯 Actualizar posición del hitbox invisible - ✅ CON VERIFICACIÓN
+  // Actualizar posición del hitbox invisible
   if (shiroHitbox && shiro) {
     shiroHitbox.x = shiro.x;
     shiroHitbox.y = shiro.y - 50;
@@ -249,7 +240,6 @@ function update() {
         newDelay = Math.max(newDelay - 10, 800);
       }
 
-      // ✅ VERIFICAR QUE EXISTE ANTES DE RESETEAR
       if (coinDropEvent) {
         coinDropEvent.reset({
           delay: newDelay,
@@ -261,7 +251,7 @@ function update() {
     }
   }
 
-  // 🕓 TEMPORIZADOR de estrellas
+  // TEMPORIZADOR de estrellas
   if (!gameOver) {
     currentTime += this.game.loop.delta / 1000;
     const secondsPerStar = timeMax / timeStars.length;
@@ -280,6 +270,8 @@ function update() {
 
 function dropCoin() {
   if (gameOver) return; 
+  
+  console.log('Generando monedas...'); // DEBUG
   
   const shiroWidth = 60;
   const totalPlayableWidth = 400;
@@ -330,7 +322,7 @@ function dropCoin() {
   
   for (let i = 0; i < distributedPositions.length; i++) {
     this.time.delayedCall(i * 500, () => {
-      if (gameOver) return; // ✅ VERIFICACIÓN ADICIONAL
+      if (gameOver) return;
       
       const x = distributedPositions[i];
       const typeRng = Math.random();
@@ -347,42 +339,6 @@ function dropCoin() {
       coin.setDisplaySize(30, 30);
       coin.setData('type', randomType);
     }, null, this);
-  }
-  
-  // SEGUNDA OLEADA
-  if (currentTime > 10 && Math.random() < 0.35) {
-    const positions = Phaser.Utils.Array.Shuffle([60, 120, 180, 240, 300, 360, 420]).slice(0, 2);
-    positions.forEach((position, i) => {
-      this.time.delayedCall(500 + i * 400, () => {
-        if (gameOver) return;
-
-        const typeRng = Math.random();
-        let randomType = typeRng < 0.5 ? 'shiro_coin' : Phaser.Utils.Array.GetRandom(['bitcoin', 'ethereum', 'solana']);
-
-        const coin = coins.create(position, 0, randomType);
-        coin.setVelocityY(dropSpeed);
-        coin.setDisplaySize(30, 30);
-        coin.setData('type', randomType);
-      }, null, this);
-    });
-  }
-  
-  // TERCERA OLEADA
-  if (currentTime > 30 && Math.random() < 0.15) {
-    const positions = Phaser.Utils.Array.Shuffle([80, 160, 240, 320, 400]).slice(0, 2);
-    positions.forEach((position, i) => {
-      this.time.delayedCall(1000 + i * 400, () => {
-        if (gameOver) return;
-
-        let randomType = Math.random() < 0.6 ? 'shiro_coin' :
-          Phaser.Utils.Array.GetRandom(['bitcoin', 'ethereum', 'solana']);
-
-        const coin = coins.create(position, 0, randomType);
-        coin.setVelocityY(dropSpeed);
-        coin.setDisplaySize(30, 30);
-        coin.setData('type', randomType);
-      }, null, this);
-    });
   }
 }
 
@@ -431,10 +387,8 @@ function collectCoin(shiro, coin) {
   coin.destroy();
 }
 
-// ✅ FUNCIÓN SETUPTOUCH CORREGIDA - SIN ERROR CONTAINS()
 function setupTouchControls(scene) {
   scene.input.on('pointerdown', (pointer) => {
-    // ✅ SOLO ACTIVAR SI EL JUEGO HA EMPEZADO
     if (gameStarted && !gameOver) {
         if (pointer.x < scene.sys.game.config.width / 2) {
             moveLeft = true;
@@ -450,18 +404,14 @@ function setupTouchControls(scene) {
     moveLeft = false;
     moveRight = false;
   });
-
-  // ✅ REMOVIDO EL POINTEROUT PROBLEMÁTICO CON CONTAINS()
 }
 
-// ✅ FUNCIÓN ENDGAME CORREGIDA PARA FLY.IO + TELEGRAM GAMES
 function endGame() {
   if (gameOver) return; 
   gameOver = true;
 
   console.log('🎯 FINALIZANDO JUEGO CON SCORE:', score);
 
-  // ✅ CLEANUP MEJORADO
   if (coinDropEvent) {
     coinDropEvent.remove(false);
     coinDropEvent = null;
@@ -508,11 +458,9 @@ function endGame() {
       this.scene.restart();
     });
 
-    // 🎮 ENVÍO DUAL: TELEGRAM GAMES OFICIAL + BACKUP
     console.log('🎯 ENVIANDO SCORE:', score);
     
     try {
-      // ✅ INTENTAR TELEGRAM GAMES OFICIAL PRIMERO
       if (typeof sendOfficialScore === 'function') {
         sendOfficialScore(score);
         
@@ -529,9 +477,6 @@ function endGame() {
       }
       
     } catch (error) {
-      console.log('⚠️ Usando sistema backup');
-      
-      // ✅ SISTEMA BACKUP CON FLY.IO - URL CORREGIDA
       fetch('https://shiro-game-bot.fly.dev/api/score', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -542,10 +487,7 @@ function endGame() {
           timestamp: Date.now()
         })
       })
-      .then(response => {
-        console.log('📡 Response status:', response.status);
-        return response.json();
-      })
+      .then(response => response.json())
       .then(data => {
         console.log('✅ SCORE BACKUP ENVIADO:', data);
         
@@ -584,14 +526,6 @@ function endGame() {
           fontFamily: 'Arial',
           stroke: '#000',
           strokeThickness: 2
-        }).setDepth(100);
-        
-        this.add.text(80, 480, 'Usa /testscore ' + score + ' manualmente', {
-          fontSize: '12px',
-          fill: '#ffff00',
-          fontFamily: 'Arial',
-          stroke: '#000',
-          strokeThickness: 1
         }).setDepth(100);
       });
     }
