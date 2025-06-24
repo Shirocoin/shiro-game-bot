@@ -5,7 +5,6 @@ const PORT = process.env.PORT || 3000;
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN; 
 const GAME_URL = "https://graceful-stroopwafel-713eff.netlify.app";
-const GAME_SHORT_NAME = "shirogame"; // ⚠️ CONFIGURAR EN BOTFATHER
 
 if (!BOT_TOKEN) {
     console.error("ERROR: Token de Telegram Bot no configurado.");
@@ -15,9 +14,10 @@ if (!BOT_TOKEN) {
 app.use(express.json());
 const bot = new TelegramBot(BOT_TOKEN, { polling: true });
 
-// 🏆 SISTEMA DE RANKINGS (MANTENER COMO BACKUP)
+// 🏆 SISTEMA DE RANKINGS INTERNO (ÚNICO)
 let rankings = {};
 
+// ✅ FUNCIÓN PARA ACTUALIZAR RANKING
 function updateRanking(userId, username, score) {
     if (!rankings[userId] || rankings[userId].score < score) {
         rankings[userId] = {
@@ -28,9 +28,11 @@ function updateRanking(userId, username, score) {
         console.log(`🏆 Ranking actualizado: ${username} - ${score} puntos`);
         return true;
     }
+    console.log(`📊 Score ${score} no supera récord actual: ${rankings[userId]?.score || 0}`);
     return false;
 }
 
+// ✅ FUNCIÓN PARA OBTENER TOP RANKINGS
 function getTopRankings(limit = 10) {
     return Object.entries(rankings)
         .map(([userId, data]) => ({
@@ -51,10 +53,10 @@ app.get("/", (req, res) => {
 app.listen(PORT, () => {
   console.log(`✅ Servidor escuchando en puerto ${PORT}`);
   console.log(`🌐 URL: ${GAME_URL}`);
-  console.log("🎮 SISTEMA TELEGRAM GAMES OFICIAL + RANKING BACKUP");
+  console.log("🏆 SOLO RANKING INTERNO - NO MÁS TELEGRAM GAMES");
 });
 
-// ✅ COMANDO /start - CON JUEGO OFICIAL
+// ✅ COMANDO /start - SIN GAMES, SOLO MENSAJE SIMPLE
 bot.onText(/\/start/, async (msg) => {
   const chatId = msg.chat.id;
   const userId = msg.from.id;
@@ -64,198 +66,105 @@ bot.onText(/\/start/, async (msg) => {
 
   const message = `🐱 ¡Hola ${username}! Bienvenido a Shiro Coin Game! 🪙
 
-🎮 **Para jugar usa el botón de abajo o:**
-🌐 **URL directa:** ${GAME_URL}
+🎮 **Para jugar:** ${GAME_URL}
 
 🏆 **Comandos disponibles:**
-/game - Enviar juego oficial
-/ranking - Ver ranking backup
-/testscore [número] - Registrar puntuación manual
+/ranking - Ver ranking actual
+/testscore [número] - Registrar puntuación
+/help - Ayuda
 
-**Puntuaciones oficiales se muestran automáticamente en el juego.**`;
+**Ejemplo:** /testscore 150
+
+¡Consigue la puntuación más alta y usa /ranking para verificar!`;
 
   try {
     await bot.sendMessage(chatId, message);
-    
-    // 🎮 ENVIAR JUEGO OFICIAL AUTOMÁTICAMENTE
-    await bot.sendGame(chatId, GAME_SHORT_NAME);
-    
-    console.log(`✅ Mensaje y juego oficial enviados. Usuario: ${userId}`);
+    console.log(`✅ Mensaje de inicio enviado. Usuario: ${userId}`);
     
   } catch (error) {
-    console.error("❌ Error enviando mensaje/juego:", error.message);
+    console.error("❌ Error enviando mensaje:", error.message);
   }
 });
 
-// 🎮 COMANDO /game - ENVIAR JUEGO OFICIAL
-bot.onText(/\/game/, async (msg) => {
-    const chatId = msg.chat.id;
-    const userId = msg.from.id;
-    console.log(`Comando /game solicitado por: ${userId}`);
-    
-    try {
-        await bot.sendGame(chatId, GAME_SHORT_NAME);
-        console.log(`✅ Juego oficial enviado a chat: ${chatId}`);
-    } catch (error) {
-        console.error("❌ Error enviando juego:", error.message);
-        await bot.sendMessage(chatId, "❌ Error: Asegúrate de que el juego esté configurado en @BotFather");
-    }
-});
-
-// 🎮 MANEJAR CALLBACK DEL BOTÓN "PLAY"
-bot.on('callback_query', async (callbackQuery) => {
-    const { id, from, message, game_short_name } = callbackQuery;
-    
-    console.log(`🎮 Callback recibido: ${game_short_name}, user: ${from.id}`);
-    
-    if (game_short_name === GAME_SHORT_NAME) {
-        try {
-            // ✅ RESPONDER CON LA URL DEL JUEGO
-            await bot.answerCallbackQuery(id, {
-                url: GAME_URL
-            });
-            
-            console.log(`✅ URL del juego enviada a usuario: ${from.id}`);
-            
-        } catch (error) {
-            console.error("❌ Error respondiendo callback:", error.message);
-        }
-    }
-});
-
-// 🏆 MANEJAR SCORES OFICIALES DE TELEGRAM GAMES
-bot.on('message', async (msg) => {
-    if (msg.game_score !== undefined) {
-        const { from, game_score, chat } = msg;
-        
-        console.log(`🏆 SCORE OFICIAL recibido: ${from.username || from.first_name} = ${game_score}`);
-        
-        try {
-            // ✅ CONFIRMAR SCORE OFICIALMENTE
-            const confirmed = await bot.setGameScore(from.id, game_score, {
-                chat_id: chat.id,
-                message_id: msg.message_id,
-                force: false // No permitir scores menores
-            });
-            
-            if (confirmed) {
-                console.log(`✅ Score oficial confirmado: ${game_score}`);
-                
-                // 📊 TAMBIÉN GUARDAR EN RANKING BACKUP
-                updateRanking(from.id, from.username || from.first_name, game_score);
-                
-                // 🎉 NOTIFICACIÓN EN EL CHAT (OPCIONAL)
-                if (game_score > 100) { // Solo para scores altos
-                    await bot.sendMessage(chat.id, 
-                        `🎉 ¡${from.first_name} acaba de hacer ${game_score} puntos en Shiro Coin Game!`
-                    );
-                }
-            }
-            
-        } catch (error) {
-            console.error("❌ Error confirmando score oficial:", error.message);
-        }
-    }
-});
-
-// ✅ COMANDO /ranking - BACKUP (OPCIONAL)
+// ✅ COMANDO /ranking - SOLO RANKING INTERNO
 bot.onText(/\/ranking/, async (msg) => {
     const chatId = msg.chat.id;
-    console.log(`Comando /ranking backup solicitado`);
+    const userId = msg.from.id;
+    console.log(`Comando /ranking solicitado por chat: ${chatId}, usuario: ${userId}`);
     
-    try {
-        // 🏆 OBTENER RANKING OFICIAL
-        const gameHighScores = await bot.getGameHighScores(msg.from.id, {
-            chat_id: chatId,
-            // message_id requerido - obtener del último juego enviado
-        });
-        
-        let rankingText = '🏆 **RANKING OFICIAL SHIRO COIN** 🏆\n\n';
-        
-        if (gameHighScores && gameHighScores.length > 0) {
-            gameHighScores.forEach((score, index) => {
-                const position = index + 1;
-                const medal = position === 1 ? '🥇' : position === 2 ? '🥈' : position === 3 ? '🥉' : '🏅';
-                rankingText += `${medal} ${position}. ${score.user.first_name} - ${score.score} puntos\n`;
-            });
-        } else {
-            rankingText += '📊 El ranking oficial está vacío.\n\n';
-            
-            // MOSTRAR RANKING BACKUP
-            const backupRanking = getTopRankings(5);
-            if (backupRanking.length > 0) {
-                rankingText += '**RANKING BACKUP:**\n';
-                backupRanking.forEach((player, index) => {
-                    rankingText += `${index + 1}. ${player.username} - ${player.score} pts\n`;
-                });
-            }
-        }
-        
-        await bot.sendMessage(chatId, rankingText, { parse_mode: 'Markdown' });
-        
-    } catch (error) {
-        console.error("❌ Error obteniendo ranking oficial:", error.message);
-        
-        // FALLBACK AL RANKING BACKUP
-        const topRankings = getTopRankings(10);
-        let rankingText = '🏆 **RANKING BACKUP** 🏆\n\n';
-        
-        if (topRankings.length === 0) {
-            rankingText += '📊 El ranking está vacío. ¡Sé el primero en jugar!';
-        } else {
-            topRankings.forEach((player, index) => {
-                const position = index + 1;
-                const medal = position === 1 ? '🥇' : position === 2 ? '🥈' : position === 3 ? '🥉' : '🏅';
-                rankingText += `${medal} ${position}. ${player.username} - ${player.score} puntos\n`;
-            });
-        }
-        
-        await bot.sendMessage(chatId, rankingText, { parse_mode: 'Markdown' });
+    const topRankings = getTopRankings(10);
+    
+    if (topRankings.length === 0) {
+        await bot.sendMessage(chatId, '📊 El ranking está vacío. ¡Sé el primero en jugar!\n\nUsa /testscore [número] para empezar.');
+        return;
     }
+    
+    let rankingText = '🏆 **RANKING SHIRO COIN** 🏆\n\n';
+    
+    topRankings.forEach((player, index) => {
+        const position = index + 1;
+        const medal = position === 1 ? '🥇' : position === 2 ? '🥈' : position === 3 ? '🥉' : '🏅';
+        rankingText += `${medal} ${position}. ${player.username} - ${player.score} puntos\n`;
+    });
+    
+    if (rankings[userId]) {
+        const userRank = topRankings.findIndex(p => p.userId == userId) + 1;
+        if (userRank > 0) {
+            rankingText += `\n👤 Tu posición: #${userRank}`;
+        }
+    }
+    
+    await bot.sendMessage(chatId, rankingText, { parse_mode: 'Markdown' });
+    console.log("✅ Ranking interno enviado (ÚNICO)");
 });
 
-// ✅ MANTENER /testscore COMO BACKUP
+// ✅ COMANDO /testscore
 bot.onText(/\/testscore (\d+)/, async (msg, match) => {
     const chatId = msg.chat.id;
     const userId = msg.from.id;
     const userName = msg.from.username || msg.from.first_name || 'Usuario';
     const score = parseInt(match[1]);
     
-    console.log(`Comando /testscore backup: ${userName} = ${score}`);
+    console.log(`Comando /testscore: ${userName} quiere registrar ${score} puntos`);
     
     const updated = updateRanking(userId, userName, score);
     
     if (updated) {
-        await bot.sendMessage(chatId, `✅ Score backup de ${score} registrado para ${userName}!\n\n⚠️ Nota: Los scores oficiales se registran automáticamente al jugar.`);
+        await bot.sendMessage(chatId, `✅ Score de ${score} registrado para ${userName}!\n\nUsa /ranking para ver tu posición.`);
     } else {
         const currentScore = rankings[userId]?.score || 0;
-        await bot.sendMessage(chatId, `📊 Tu puntuación backup actual (${currentScore}) es mayor.\n\n🎮 Usa el juego oficial para actualizar tu score.`);
+        await bot.sendMessage(chatId, `📊 Tu puntuación actual (${currentScore}) es mayor o igual.\nNecesitas más de ${currentScore} puntos para actualizar.`);
     }
 });
 
-// ✅ ENDPOINT BACKUP PARA SCORES
+// ✅ ENDPOINT PARA RECIBIR SCORES DEL JUEGO
 app.post('/api/score', async (req, res) => {
     try {
-        console.log('📡 Score backup recibido:', req.body);
+        console.log('📡 Score recibido del juego:', req.body);
         
-        const { userId, username, score } = req.body;
-        const finalScore = parseInt(score);
+        const { userId, username, score, chatId } = req.body;
         
-        if (!finalScore) {
+        if (!score) {
             return res.status(400).json({ error: 'Score requerido' });
         }
         
-        const updated = updateRanking(userId || Date.now().toString(), username || 'Jugador', finalScore);
+        const finalUserId = userId || Date.now().toString();
+        const finalUsername = username || 'Jugador_' + Math.floor(Math.random() * 1000);
+        const finalScore = parseInt(score);
+        
+        const updated = updateRanking(finalUserId, finalUsername, finalScore);
+        
+        console.log(`🎯 Score procesado: ${finalUsername} = ${finalScore}, actualizado: ${updated}`);
         
         res.json({ 
             success: true, 
             updated: updated,
             score: finalScore,
-            message: 'Score backup guardado - Usa el juego oficial para score oficial'
+            message: updated ? 'Nuevo récord!' : 'No supera récord actual'
         });
         
     } catch (error) {
-        console.error('❌ Error procesando score backup:', error);
+        console.error('❌ Error procesando score:', error);
         res.status(500).json({ error: error.message });
     }
 });
@@ -264,31 +173,43 @@ app.post('/api/score', async (req, res) => {
 bot.onText(/\/help/, async (msg) => {
     const chatId = msg.chat.id;
     const helpText = `
-🎮 **SHIRO COIN GAME - SISTEMA OFICIAL**
+🎮 **SHIRO COIN GAME**
 
 **🎯 Para jugar:**
-1. Usa /game para obtener el juego oficial
-2. O visita: ${GAME_URL}
+${GAME_URL}
 
 **📋 Comandos:**
-/game - Enviar juego oficial de Telegram
-/ranking - Ver ranking oficial + backup
-/testscore [número] - Score backup manual
+/ranking - Ver ranking actual
+/testscore [número] - Registrar score
 /help - Esta ayuda
 
-**🏆 Sistema de Rankings:**
-✅ **OFICIAL:** Se registra automáticamente al jugar
-✅ **BACKUP:** Sistema interno como respaldo
+**🎮 Cómo funciona:**
+1. Juega en el enlace de arriba
+2. Al terminar, usa /testscore [tu_puntuación]
+3. Usa /ranking para ver tu posición
 
-**💡 Funcionamiento:**
-- Los scores oficiales aparecen automáticamente en el mensaje del juego
-- El ranking oficial se actualiza en tiempo real
-- Sistema backup disponible como respaldo
+**Ejemplo:**
+/testscore 150
+/ranking
 
-**🎮 ¡El mejor score se mostrará a todos en el chat!**
+**💡 Sistema:**
+✅ Solo ranking interno
+✅ Se actualiza solo si superas tu récord
+✅ Un solo ranking para todos
     `;
     
     await bot.sendMessage(chatId, helpText);
+});
+
+// ✅ NO PROCESAR NADA DE TELEGRAM GAMES
+bot.on('message', async (msg) => {
+    console.log('📨 MENSAJE RECIBIDO TIPO:', msg.content_type || 'unknown');
+    
+    // ❌ IGNORAR completamente web_app_data y game_score
+    if (msg.web_app_data || msg.game_score !== undefined) {
+        console.log('🚫 Ignorando datos de Telegram Games - Solo ranking interno');
+        return;
+    }
 });
 
 bot.on('polling_error', (error) => {
@@ -299,8 +220,8 @@ bot.on('error', (error) => {
   console.error(`❌ Error del bot:`, error);
 });
 
-console.log("🤖 Bot iniciado con TELEGRAM GAMES OFICIAL");
+console.log("🤖 Bot iniciado");
 console.log(`🌐 URL del juego: ${GAME_URL}`);
-console.log(`🎮 Nombre del juego: ${GAME_SHORT_NAME}`);
-console.log("🏆 RANKING OFICIAL + BACKUP");
+console.log("🏆 SISTEMA: SOLO RANKING INTERNO");
+console.log("🚫 NO TELEGRAM GAMES - NO MÁS DOBLE RANKING");
 console.log("⏳ Esperando comandos...");
