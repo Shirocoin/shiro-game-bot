@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Ranking Shiro Coin</title>
+  <style>
+    body { font-family: Arial; background: #f5f5f5; padding: 20px; }
+    table { border-collapse: collapse; width: 100%; background: white; }
+    th, td { border: 1px solid #ccc; padding: 10px; text-align: left; }
+    th { background-color: #222; color: #fff; }
+    caption { font-size: 24px; margin-bottom: 10px; }
+  </style>
+</head>
+<body>
+  <table id="ranking-table">
+    <caption>🏆 Ranking Shiro Coin</caption>
+    <thead>
+      <tr><th>#</th><th>Usuario</th><th>Puntos</th></tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
+    fetch('https://649437dd0da866a953677f42.mockapi.io/scores')
+      .then(res => res.json())
+      .then(data => {
+        const sorted = data.sort((a, b) => b.score - a.score).slice(0, 10);
+        const tbody = document.querySelector("#ranking-table tbody");
+        sorted.forEach((user, i) => {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `<td>${i + 1}</td><td>${user.username}</td><td>${user.score}</td>`;
+          tbody.appendChild(tr);
+        });
+      });
+  </script>
+</body>
+</html>
