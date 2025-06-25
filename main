@@ -565,6 +565,20 @@ function endGame() {
       strokeThickness: 2
     }).setDepth(100);
 
+    // 🟡 Botón para ver el ranking externo
+    const rankingButton = this.add.text(150, 430, '🏆 Ver Ranking', {
+      fontSize: '20px',
+      fill: '#00ccff',
+      fontFamily: 'Arial',
+      backgroundColor: '#000',
+      padding: { x: 10, y: 5 }
+    })
+    .setInteractive()
+    .setDepth(100)
+    .on('pointerdown', () => {
+      window.open('ranking.html', '_blank');
+    });
+
     restartButton = this.add.image(240, 520, 'restart_icon')
       .setDisplaySize(100, 100)
       .setInteractive()
@@ -578,20 +592,12 @@ function endGame() {
       this.scene.restart();
     });
 
-    this.add.text(120, 450, '✅ Puntuación enviada', {
+    this.add.text(120, 600, '✅ Puntuación enviada', {
       fontSize: '16px',
       fill: '#00ff00',
       fontFamily: 'Arial',
       stroke: '#000',
       strokeThickness: 2
-    }).setDepth(100);
-
-    this.add.text(130, 480, 'Revisa el ranking en Telegram', {
-      fontSize: '14px',
-      fill: '#ffffff',
-      fontFamily: 'Arial',
-      stroke: '#000',
-      strokeThickness: 1
     }).setDepth(100);
   }, null, this);
 }
