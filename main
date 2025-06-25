@@ -634,3 +634,6 @@ function sendScoreToMockAPI(username, score) {
       }
     });
 }
+
+
+sendScoreToMockAPI(username, score);
