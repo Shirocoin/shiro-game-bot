@@ -546,7 +546,7 @@ function endGame() {
   console.log('🎯 FINALIZANDO JUEGO CON SCORE:', score);
 
   // ✅ Enviar al ranking externo (MockAPI)
-  sendScoreToMockAPI(username, score);
+  
 
   if (coinDropEvent) coinDropEvent.remove(false);
 
@@ -612,8 +612,8 @@ function endGame() {
   }, null, this);
 }
 
-function sendScoreToMockAPI(username, score) {
-  const apiUrl = 'https://649437dd0da866a953677f42.mockapi.io/scores';
+function sendScoreToJsonBin(username, score) {
+  const apiUrl = 'https://api.npoint.io/6e09e9ef232e819e5f3d';
 
   fetch(apiUrl)
     .then(res => res.json())
@@ -634,6 +634,3 @@ function sendScoreToMockAPI(username, score) {
       }
     });
 }
-
-
-sendScoreToMockAPI(username, score);
