@@ -1,3 +1,14 @@
+// ✅ Pedir nombre y guardarlo en localStorage
+let username = localStorage.getItem('shiro_username');
+if (!username) {
+  username = prompt("🐱 ¿Cómo te llamas?");
+  if (username) {
+    localStorage.setItem('shiro_username', username);
+  } else {
+    username = "Jugador_" + Math.floor(Math.random() * 1000);
+  }
+}
+
 const config = {
   type: Phaser.AUTO,
   width: 480,
@@ -535,7 +546,6 @@ function endGame() {
   console.log('🎯 FINALIZANDO JUEGO CON SCORE:', score);
 
   // ✅ Enviar al ranking externo (MockAPI)
-  const username = window.Telegram?.WebApp?.initDataUnsafe?.user?.username || 'Anonimo';
   sendScoreToMockAPI(username, score);
 
   if (coinDropEvent) coinDropEvent.remove(false);
